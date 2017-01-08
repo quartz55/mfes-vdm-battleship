@@ -1,0 +1,86 @@
+class Board
+	values
+		public static SIZE: int = 10;
+		
+		public static MISS : int = 0;
+		public static HIT : int = 1;
+		public static SHIP_SUNK : int = 2;
+	
+	instance variables
+
+		-- Boards can be of two types:
+		-- 	playable => registers the Players shots on the enemy's board.
+		-- 	not playable (own board) => registers the enemy's shots at the player's board. 
+		public playable: bool;
+		public cells: set of Cell := {};
+		 
+		inv card(cells) >= 1;
+		
+	operations
+
+		public Board: bool ==> Board
+			Board(type) == 
+			(
+				playable := type;
+				
+				for all x in set {1, ..., SIZE}  do (
+					for all y in set {1, ..., SIZE} do (
+						cells := cells union {new Cell(x,y)};
+					)
+				);
+			  for all c in set cells do c.setBoard(self);
+			)
+		post card(cells) = SIZE * SIZE;
+		
+		public hit : Cell`Position ==> int
+			hit(coords) ==
+			(
+				let c in set cells be st (c.pos.#1 = coords.#1 and c.pos.#2 = coords.#2) in (
+				
+					if not c.hasShip or c.hit then return MISS;
+
+					c.ship.inc();
+					c.setHit(true);
+					
+					if c.ship.isDown() then return SHIP_SUNK
+					else return HIT;
+				);
+			)
+			pre Cell`validPosition(coords)
+			post RESULT in set {MISS, HIT, SHIP_SUNK};
+
+		public mark : Cell`Position * int ==> ()
+			mark(coords, res) ==
+			(
+				let c in set cells be st c.pos.#1 = coords.#1 and c.pos.#2 = coords.#2 in (
+					c.setHit(true);
+					if res = HIT or res = SHIP_SUNK then
+						c.setHasShip(true);
+				);
+			)
+			pre Cell`validPosition(coords);				
+			
+		public toList : () ==> seq of seq of Cell
+			toList() == (
+				dcl builder : seq of seq of Cell := [],
+						aux : seq of Cell;
+				
+				for y = 1 to SIZE do (
+					aux := [];
+					for x = 1 to SIZE do (
+						let cell in set cells be st cell.pos.#1 = x and cell.pos.#2 = y in (
+							aux := aux ^ [cell];
+						);
+					);
+					builder := builder ^ [aux];
+				);
+				
+				return builder;
+			);
+			
+		public validPlay : Cell`Position ==> bool
+			validPlay(play) ==
+				let c in set cells be st c.pos.#1 = play.#1 and c.pos.#2 = play.#2 in (
+					return not c.hit;
+				);
+end Board

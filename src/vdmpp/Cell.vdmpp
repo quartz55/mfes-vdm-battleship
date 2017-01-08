@@ -1,0 +1,50 @@
+class Cell
+	types
+		public Position = int * int;
+	instance variables
+	
+		public pos : Position;
+		public hit: bool := false;
+		public hasShip: bool := false;
+		public ship: [Ship] := nil;
+		public board: [Board] := nil;
+	
+		inv validPosition(pos);
+		
+	operations
+		public Cell : int * int ==> Cell
+			Cell (x, y) ==
+			(
+				pos := mk_(x,y);
+			)
+		pre validPosition(mk_(x, y));
+		
+		public setBoard : Board ==> ()
+			setBoard(b) ==
+			(
+				board := b;
+			)
+		pre is_Board(b);
+		
+		public setHasShip : bool ==> ()
+			setHasShip(n) == (
+				hasShip := n;
+			);
+			
+		public setShip : Ship ==> ()
+			setShip(s) == (
+				ship := s;
+			);
+			
+		public setHit : bool ==> ()
+			setHit(n) == (
+				hit := n;
+			);
+
+	functions
+	
+		public static validPosition : Position -> bool
+			validPosition(pos) ==
+				pos.#1 >= 1 and pos.#1 <= Board`SIZE and pos.#2 >= 1 and pos.#2 <= Board`SIZE;
+	
+end Cell

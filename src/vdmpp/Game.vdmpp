@@ -1,0 +1,58 @@
+class Game
+	instance variables
+		public player1: Player;
+		public player2: Player;
+		public currentPlayer: Player;
+		public isGameOver : bool := false;
+		private inputQueue : seq of Cell`Position := [];
+		inv currentPlayer = player1 or currentPlayer = player2;
+
+	operations
+		public Game : seq of char * bool * seq of Ship`Placement * seq of char * bool * seq of Ship`Placement ==> Game
+			Game (p1name, p1bot, p1ships, p2name, p2bot, p2ships) ==
+			(
+				player1 := new Player(p1name, p1bot, p1ships);
+				player2 := new Player(p2name, p2bot, p2ships);
+				currentPlayer := player1;
+			);
+
+		public turn : () ==> ()
+			turn() == (
+				dcl move : [Cell`Position],
+						otherPlayer : Player := if currentPlayer = player1 then player2 else player1;
+				
+				if currentPlayer.isBot then (
+					move := currentPlayer.bot_genCoords()
+				)
+				elseif len inputQueue > 0 then (
+					move := hd inputQueue;
+					inputQueue := tl inputQueue;
+				);
+				
+				if not move = nil and currentPlayer.boardplay.validPlay(move) then (
+					currentPlayer.boardplay.mark(move, otherPlayer.boardown.hit(move));
+					isGameOver := checkVictory(otherPlayer.fleet);
+					if not isGameOver then currentPlayer := otherPlayer;
+				);
+			)
+		pre not isGameOver
+		post len inputQueue~ > 0 and  not currentPlayer~.isBot => len inputQueue~ = len inputQueue + 1;
+		
+		public play : int * int ==> ()
+			play(x, y) == (
+				inputQueue := inputQueue ^ [mk_(x, y)]
+			)
+		pre Cell`validPosition(mk_(x, y))
+		post len inputQueue = len inputQueue~ + 1;
+		
+		public getWinner: () ==> Player
+			getWinner() == return currentPlayer
+		pre isGameOver;
+		
+		public checkVictory: seq of Ship ==> bool
+			checkVictory (ships) == return forall s in set elems ships & s.isDown();
+				
+		public getAllBoards : () ==> set of Board
+			getAllBoards() == return { player1.boardown, player2.boardown, player1.boardplay, player2.boardplay};
+			
+end Game

@@ -1,0 +1,74 @@
+class Ship
+	types
+		public Orientation = <UP> | <RIGHT> | <DOWN> | <LEFT>;
+		public Placement :: cell : Cell`Position
+												orientation : Orientation;
+	values
+		static sizes : set of int = {2, 3, 4, 5};
+		static orientations : map Orientation to Cell`Position = {
+      <UP>		|-> mk_( 0,-1),
+			<RIGHT>	|-> mk_( 1, 0),
+  		<DOWN>	|-> mk_( 0, 1),
+			<LEFT>	|-> mk_(-1, 0)
+		};
+
+	instance variables
+	
+		public hits : int := 0;
+		public size : int;
+		public board : Board;
+		public cells : set of Cell := {};
+		inv size in set sizes;
+	
+	operations
+	
+	public Ship: Placement * int * Board ==> Ship
+	Ship($placement, $size, $board) == 
+	(
+		dcl coords : set of Cell`Position;
+		size := $size;
+		board := $board;
+		
+		coords := {$placement.cell};
+		for i = 1 to size-1 do ( 
+			coords := coords union {
+						mk_($placement.cell.#1+orientations($placement.orientation).#1*i,
+				 		    $placement.cell.#2+orientations($placement.orientation).#2*i)
+					  };
+		);
+		fillCells(coords);
+	)
+	pre	forall x in set {$placement.cell.#1, $placement.cell.#1+orientations($placement.orientation).#1*($size-1)},
+						 y in set {$placement.cell.#2, $placement.cell.#2+orientations($placement.orientation).#2*($size-1)} &
+				Cell`validPosition(mk_(x,y));
+	
+	public fillCells: set of Cell`Position ==> ()
+		fillCells(coords) ==
+		(
+			for all c in set coords do
+			(
+				let cell in set board.cells be st
+					cell.pos.#1 = c.#1 and cell.pos.#2 = c.#2 in (			 
+				  	cell.setHasShip(true);
+						cell.setShip(self);
+						cells := cells union {cell};
+					);
+			);
+		)
+	pre card(coords) >= 0 and card(coords) <= size and
+			forall c in set coords &
+				let h in set board.cells be st h.pos.#1 = c.#1 and 
+												 h.pos.#2 = c.#2 in
+				(
+					not h.hasShip
+				);
+
+	public inc: () ==> ()
+		inc() == hits := hits +1
+	pre hits < size
+	post hits <= size;
+	
+	public isDown : () ==> bool
+		isDown() == return size = hits;
+
+end Ship

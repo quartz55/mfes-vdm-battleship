@@ -1,0 +1,54 @@
+class Player
+	types
+		
+
+	values
+		-- Each element represents the size of a ship. (helper to generate the ships)
+			-- 4 ships with size 2
+			-- 3 ships with size 3
+			-- 2 ships with size 4
+			-- 1 ship  with size 5
+		public static FLEET : seq of int = [2, 2, 2, 2, 3, 3, 3, 4, 4, 5];
+
+	instance variables
+		
+		public it : int := 0;
+		public name : seq of char;
+		public fleet : seq of Ship;
+		public boardown : Board;
+		public boardplay : Board;
+		public isBot : bool;
+		
+		inv (len fleet) = len FLEET;
+		
+	operations
+	
+		public Player : seq of char * bool * seq of Ship`Placement ==> Player
+		Player(n, isbot, ships) ==
+		(
+			name := n;
+			isBot := isbot;
+			boardown := new Board(false);
+			boardplay := new Board(true);
+			
+			fleet := [];
+			
+			for i = 1 to (len FLEET) do (
+				fleet := fleet ^ [new Ship(ships(i),FLEET(i),boardown)];
+			);
+		)
+		pre len ships = len FLEET;
+
+		public bot_genCoords : () ==> Cell`Position
+			bot_genCoords() ==
+			(
+				dcl x : int := it mod Board`SIZE + 1,
+					  y : int := it div Board`SIZE + 1;
+				it := it + 1;
+				
+				return mk_(x,y);
+			)
+		pre it <= Board`SIZE ** 2
+		post Cell`validPosition(RESULT);
+
+end Player
