@@ -1,0 +1,148 @@
+class Tests
+	operations
+	
+	    public static runAllTests : () ==> ()
+        runAllTests () ==
+        (
+        	testFullGame1();
+        	testFullGame2();
+        	
+        	testBoardHousesNumber();
+        	testCheckCoords();
+        	testNoOverlapedShips();
+        );
+        
+        public static testFullGame1 : () ==> ()
+        	testFullGame1() ==
+        	(
+						dcl ge : Game := new Game("player1", true, getShips("player1"), "player2", false, getShips("player2")),
+								moves : seq of Cell`Position := [mk_(2,2), mk_(3,2), mk_(5,2),
+																								 mk_(6,2), mk_(8,2), mk_(8,3),
+																							 	 mk_(2,4), mk_(4,4), mk_(5,4),
+																							 	 mk_(6,4), mk_(8,4), mk_(2,5), 
+																							 	 mk_(4,5), mk_(5,5), mk_(6,5),
+																							 	 mk_(8,5), mk_(2,6), mk_(4,7),
+																							 	 mk_(5,7), mk_(6,7), mk_(7,7),
+																							 	 mk_(2,9), mk_(4,9), mk_(5,9),
+																							 	 mk_(6,9), mk_(7,9), mk_(8,9),
+																							 	 mk_(10,9),mk_(2,10),mk_(10,10)];
+
+						for m in moves do (
+							ge.play(m.#1, m.#2)
+						);
+						
+						while not ge.isGameOver do (
+							ge.turn();
+						);
+
+						Assert`assertTrue(ge.isGameOver);
+						Assert`assertTrue(ge.getWinner() = ge.player2);
+					);
+        
+        public static testFullGame2 : () ==> ()
+        	testFullGame2() ==
+        	(
+						dcl ge : Game := new Game("player1", false, getShips("player1"), "player2", true, getShips("player2")),
+								moves : seq of Cell`Position := [mk_(2,2), mk_(3,2), mk_(5,2),
+																								 mk_(6,2), mk_(8,2), mk_(8,3),
+																								 mk_(2,4), mk_(4,4), mk_(5,4),
+																								 mk_(6,4), mk_(8,4), mk_(2,5),
+																								 mk_(4,5), mk_(5,5), mk_(6,5),
+																								 mk_(8,5), mk_(2,6), mk_(4,7),
+																								 mk_(5,7), mk_(6,7), mk_(7,7),
+																								 mk_(2,9), mk_(4,9), mk_(5,9),
+																								 mk_(6,9), mk_(7,9), mk_(8,9),
+																								 mk_(10,9),mk_(2,10),mk_(10,10)];
+																								 
+						for m in moves do (
+							ge.play(m.#1, m.#2)
+						);
+						
+						while not ge.isGameOver do (
+							ge.turn();
+						);
+				
+						Assert`assertTrue(ge.isGameOver);
+						Assert`assertTrue(ge.getWinner() = ge.player1);
+					);
+		
+		
+		public static testBoardHousesNumber : () ==> ()
+			testBoardHousesNumber() ==
+			(
+				dcl board : Board := new Board(false);
+				
+				Assert`assertTrue(card(board.cells) = Board`SIZE * Board`SIZE);	
+			);
+		
+		public static testCheckCoords : () ==> ()
+			testCheckCoords() ==
+			(
+				dcl ge : Game := new Game("player1", true, getShips("player1"), "player2", true, getShips("player2")),
+						boards : set of Board := ge.getAllBoards();
+					
+				Assert`assertTrue(
+					forall board in set boards &
+						forall cell in set board.cells &
+							Cell`validPosition(cell.pos)
+				);
+			);
+
+		public static testNoOverlapedShips : () ==> ()
+			testNoOverlapedShips() ==
+			(
+				dcl ge : Game := new Game("player1", true, getShips("player1"), "player2", true, getShips("player2")),
+						coords1 : seq of Cell := [],
+						coords2 : seq of Cell := [];
+					
+					for all ship in set elems ge.player1.fleet do
+						coords1 := coords1 ^ VDMUtil`set2seq[Cell](ship.cells);
+						
+					for all ship in set elems ge.player2.fleet do
+						coords2 := coords2 ^ VDMUtil`set2seq[Cell](ship.cells);
+			
+				Assert`assertTrue(
+					len coords1 = card elems coords1 and
+					len coords2 = card elems coords2				
+				);
+			);
+			
+		public static testInvalidPosition : () ==> ()
+			testInvalidPosition() == (
+				dcl ge : Game := new Game("player1", false, getShips("player1"), "player2", true, getShips("player2"));
+				
+				ge.play(-1,-1);
+			);
+			
+		public static getShips : seq of char ==> seq of Ship`Placement
+			getShips(name) ==
+			(
+				dcl pos : seq of Cell`Position := getShipsPositions(name),
+						orientations : seq of Ship`Orientation := getShipsOrientations(name),
+						placements : seq of Ship`Placement := [];
+						
+				for i = 1 to (len pos) do placements := placements ^ [mk_Ship`Placement(pos(i),orientations(i))];
+				
+				return placements;
+			);
+			
+		public static getShipsPositions : seq of char ==> seq of Cell`Position
+			getShipsPositions(name) ==
+			(
+				dcl aux : seq of Cell`Position := [];
+				dcl tmp : seq of seq of int := IO`freadval[seq of seq of int]("res/" ^ name ^ ".shipscoords").#2;
+				for e in tmp do (
+					aux := aux ^ [mk_(e(1), e(2))]
+				);
+				return aux
+			)
+		post forall coord in set elems RESULT &
+					Cell`validPosition(coord);
+		
+		public static getShipsOrientations : seq of char ==> seq of Ship`Orientation
+			getShipsOrientations(name) ==
+			(
+				return IO`freadval[seq of Ship`Orientation]("res/" ^ name ^ ".orientations").#2;
+			);
+        
+end Tests
